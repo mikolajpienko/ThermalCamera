@@ -148,8 +148,6 @@ class ThermalSubscriberNode(Node):
             bin_img = (bin_img/256).astype("uint8")
             contours, hier = cv.findContours(bin_img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             cv.normalize(bin_img, bin_img, 0, 255, cv.NORM_MINMAX)
-            cv.imshow("Thermal Camera Feed", bin_img)
-            waitKey(1)  
             largestArea = 0
             for i in range(len(contours)):
                 area = cv.contourArea(contours[i])

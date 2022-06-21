@@ -1,0 +1,33 @@
+version: "2.3"
+
+services:
+
+  plotjuggler-ros:
+    image: husarion/plotjuggler:humble
+    volumes: 
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY
+    command: ros2 run plotjuggler plotjuggler
+    
+  rviz:
+    image: husarion/rviz2
+    restart: unless-stopped
+#    network_mode: host
+#    ipc: host
+    volumes: 
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./rosbot_pro.rviz:/root/.rviz2/default.rviz
+    environment:
+      - DISPLAY
+    
+  micro-ros_agent:
+    image: microros/micro-ros-agent:galactic
+    command: serial --dev /dev/ttyUSB0 -b 921600
+    devices: 
+      - /dev/ttyUSB0:/dev/ttyUSB0
+#  python-subscriber:
+#    build: .
+#    volumes:
+#      - ./py_pkg:/app/ros2_ws/src/py_pkg
+#    command: bash -c "cd app/ros2_ws/ && colcon build && source install/setup.bash && ros2 run #py_pkg thermal_subscriber" 

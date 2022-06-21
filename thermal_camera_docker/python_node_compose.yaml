@@ -1,0 +1,22 @@
+version: "2.3"
+
+services:
+  rviz:
+    image: husarion/rviz2
+    restart: unless-stopped
+    volumes: 
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY
+    devices:
+      - /dev/dri/card0:/dev/dri/card0
+    
+  micro-ros_agent:
+    image: microros/micro-ros-agent:galactic
+    command: serial --dev /dev/ttyUSB0 -b 460800
+    devices: 
+      - /dev/ttyUSB0:/dev/ttyUSB0
+  
+  thermal_subscriber:
+    build: .
+

@@ -20,7 +20,7 @@ class ThermalSubscriberNode(Node):
         super().__init__("thermal_subscriber")
         self.subscriber = self.create_subscription(Image, "thermal_image", self.dataReceivedCallback, qos_profile=10)
         self.frame = [0 for i in range(0, 576)]
-        self.get_logger().info("Node started aaabbaa")
+        self.get_logger().info("Node started")
         self.iterator = 0
         self.buf= []
         self._markerPublisher = self.create_publisher(Marker, "tc_goal_angle", 10)
@@ -37,6 +37,7 @@ class ThermalSubscriberNode(Node):
         self.targetTempMin = 30
         self.targetTempMax = 37
         self.goToHottest = False
+        self.certain = 0
         self.timer = self.create_timer(0.5, self.parseParams)
         self.declare_parameter('target_min_temp', 34)
         self.declare_parameter('target_max_temp', 37)
@@ -86,8 +87,8 @@ class ThermalSubscriberNode(Node):
         
         self.goalPose.header.frame_id = "base_link"
         self.goalPose.header.stamp = self.get_clock().now().to_msg()
-        self.goalPose.pose.position.x = 0.0
-        self.goalPose.pose.position.y = 0.0
+        self.goalPose.pose.position.x = math.sin(3.1415 * (angle-180)/360) *0.5
+        self.goalPose.pose.position.y = math.cos(3.1415 * (angle-180)/360) *0.5
         self.goalPose.pose.position.z = 0.0
         self.goalPose.pose.orientation.x = math.sin(3.1415 * (angle-180)/360)
         self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
@@ -178,6 +179,8 @@ class ThermalSubscriberNode(Node):
             self.iterator +=1
         if(self.iterator>=10):
             self.iterator = 0
+
+
 
         #calculating markers position based on averaged angle
         redMarker = int((165 + self.targetAngle)*3/6.875)

@@ -12,6 +12,7 @@ from rclpy.node import Node
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from visualization_msgs.msg import Marker
+from geometry_msgs.msg import PoseStamped
 import math
 
 class ThermalSubscriberNode(Node): 
@@ -24,6 +25,8 @@ class ThermalSubscriberNode(Node):
         self.buf= []
         self._markerPublisher = self.create_publisher(Marker, "tc_goal_angle", 10)
         self.imagePublisher = self.create_publisher(Image, "tc_image_devel", 10)
+        self.posePublisher = self.create_publisher(PoseStamped, "goal_pose", 10)
+        self.goalPose = PoseStamped()
         self.images = []
         self.targetAngle = 0.0
         self.marker = Marker()
@@ -31,7 +34,7 @@ class ThermalSubscriberNode(Node):
         self.imageToPublish = []
         self.stitcher = cv.Stitcher_create()
         self.lastCenterPixel = 0
-        self.targetTempMin = 34
+        self.targetTempMin = 30
         self.targetTempMax = 37
         self.goToHottest = False
         self.timer = self.create_timer(0.5, self.parseParams)
@@ -81,7 +84,19 @@ class ThermalSubscriberNode(Node):
         self.marker.pose.orientation.z = 0.0
         self.marker.pose.orientation.w = 0.0
         
+        self.goalPose.header.frame_id = "base_link"
+        self.goalPose.header.stamp = self.get_clock().now().to_msg()
+        self.goalPose.pose.position.x = 0.0
+        self.goalPose.pose.position.y = 0.0
+        self.goalPose.pose.position.z = 0.0
+        self.goalPose.pose.orientation.x = math.sin(3.1415 * (angle-180)/360)
+        self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
+        self.goalPose.pose.orientation.z = 0.0
+        self.goalPose.pose.orientation.w = 0.0
+
+        self.posePublisher.publish(self.goalPose)
         self._markerPublisher.publish(self.marker)
+
     def publishImage(self, image):
         bridge = CvBridge()
         msg = bridge.cv2_to_imgmsg(image)

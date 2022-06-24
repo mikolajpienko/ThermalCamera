@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from asyncio import futures
+from curses import raw
 from distutils.archive_util import make_archive
 import imp
 from inspect import Parameter
@@ -122,15 +123,17 @@ class ThermalSubscriberNode(Node):
         cv_image = np.zeros_like(raw_image)
         cv_image = cv.normalize(raw_image, cv_image, 0, 65535, cv.NORM_MINMAX)
 
+        blur = np.zeros_like(raw_image)
+        blur = cv.medianBlur(cv_image, 3)
         #converting from 16bit mono to 8 bit 
-        img8bit = (cv_image/256).astype("uint8")
+        img8bit = (blur/256).astype("uint8")
 
         #creating color image that can display colored contours and markers
         color_img = cvtColor(img8bit, cv.COLOR_GRAY2RGB)
 
         #resizing image 3 times to increase clarity
         color_img = cv.resize(color_img, (16*9, 12*3), interpolation=cv.INTER_LINEAR)
-
+       
         if(self.goToHottest == True):
             #creating a mask image that contains the hotest pixels
             ret, bin_img = cv.threshold(img8bit, 165, 255, cv.THRESH_BINARY)
@@ -165,7 +168,7 @@ class ThermalSubscriberNode(Node):
                     largestArea = area
                     index = i
             
-            self.get_logger().info("LEN: {}         INDEX: {}".format(len(contours), index))
+            #self.get_logger().info("LEN: {}         INDEX: {}".format(len(contours), index))
             if(len(contours)>0):
                 x,y,w,h = cv.boundingRect(contours[index])
                 centerPixel = int(x+(w)/2)

@@ -103,7 +103,6 @@ class ThermalSubscriberNode(Node):
         self.goalPose.pose.orientation.z = 0.0
         self.goalPose.pose.orientation.w = 0.0
 
-        self.sendGetStateRequest()
         self.posePublisher.publish(self.goalPose)
         self._markerPublisher.publish(self.marker)
 

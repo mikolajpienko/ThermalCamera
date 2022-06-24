@@ -40,12 +40,12 @@ class ThermalSubscriberNode(Node):
         self.imageToPublish = []
         self.stitcher = cv.Stitcher_create()
         self.lastCenterPixel = 0
-        self.targetTempMin = 30
+        self.targetTempMin = 28
         self.targetTempMax = 37
         self.goToHottest = False
         self.certain = 0
         self.timer = self.create_timer(0.5, self.parseParams)
-        self.declare_parameter('target_min_temp', 34)
+        self.declare_parameter('target_min_temp', 28)
         self.declare_parameter('target_max_temp', 37)
         self.declare_parameter('go_to_hottest_point', False)
     # def publishImageCallback(self):

@@ -15,7 +15,6 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PoseStamped
 from lifecycle_msgs.srv import GetState
 from lifecycle_msgs.msg import State
-from 
 import math
 
 class ThermalSubscriberNode(Node): 

@@ -87,7 +87,7 @@ class ThermalSubscriberNode(Node):
         
         self.goalPose.header.frame_id = "base_link"
         self.goalPose.header.stamp = self.get_clock().now().to_msg()
-        self.goalPose.pose.position.x = 0.5
+        self.goalPose.pose.position.x = 0.0
         self.goalPose.pose.position.y = 0.0
         self.goalPose.pose.position.z = 0.0
         self.goalPose.pose.orientation.x = math.sin(3.1415 * (angle-180)/360)

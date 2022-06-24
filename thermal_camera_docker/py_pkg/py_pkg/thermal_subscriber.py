@@ -67,11 +67,6 @@ class ThermalSubscriberNode(Node):
         self.targetTempMax = self.get_parameter('target_max_temp').get_parameter_value().integer_value
         self.goToHottest = self.get_parameter('go_to_hottest_point').get_parameter_value().bool_value
         self.get_logger().info("target min temp: {}     target max temp: {}     go to hottest: {}".format(self.targetTempMin, self.targetTempMax, self.goToHottest))
-    def sendGetStateRequest(self):
-        future = self.cli.call_async(self.navStateRequest)
-        rclpy.spin_until_future_complete(self, future)
-        if(future.result() is not None):
-            self.get_logger().info(str(future.result()))
 
     def publishArrow(self, angle):
         self.marker.header.frame_id = "base_link"
@@ -105,8 +100,7 @@ class ThermalSubscriberNode(Node):
         self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
         self.goalPose.pose.orientation.z = 0.0
         self.goalPose.pose.orientation.w = 0.0
-        
-        self.sendGetStateRequest()
+
         if(-5 <= angle <= 5):
             self.goalPose.pose.position.x = 0.5
         

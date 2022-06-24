@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from asyncio import futures
 from distutils.archive_util import make_archive
 import imp
 from inspect import Parameter
@@ -67,8 +68,10 @@ class ThermalSubscriberNode(Node):
         self.goToHottest = self.get_parameter('go_to_hottest_point').get_parameter_value().bool_value
         self.get_logger().info("target min temp: {}     target max temp: {}     go to hottest: {}".format(self.targetTempMin, self.targetTempMax, self.goToHottest))
     def sendGetStateRequest(self):
-        self.future = self.cli.call(self.navStateRequest)
-        self.get_logger().info(str(self.future.result()))
+        self.future = self.cli.call_async(self.navStateRequest)
+        rclpy.spin_until_future_complete(self, self.future)
+        if(self.future.result() is not None):
+            self.get_logger().info(str(self.future.result()))
 
     def publishArrow(self, angle):
         self.marker.header.frame_id = "base_link"

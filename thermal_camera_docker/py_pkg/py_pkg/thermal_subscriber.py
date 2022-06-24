@@ -15,6 +15,7 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PoseStamped
 from lifecycle_msgs.srv import GetState
 from lifecycle_msgs.msg import State
+from 
 import math
 
 class ThermalSubscriberNode(Node): 
@@ -28,7 +29,7 @@ class ThermalSubscriberNode(Node):
         self._markerPublisher = self.create_publisher(Marker, "tc_goal_angle", 10)
         self.imagePublisher = self.create_publisher(Image, "tc_image_devel", 10)
         self.posePublisher = self.create_publisher(PoseStamped, "goal_pose", 10)
-        self.cli = self.create_client(GetState, 'get_state')
+        self.cli = self.create_client(GetState, 'bt_navigator/get_state')
         self.navStateRequest = GetState.Request()
         self.state = State()
         self.goalPose = PoseStamped()
@@ -102,7 +103,8 @@ class ThermalSubscriberNode(Node):
         self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
         self.goalPose.pose.orientation.z = 0.0
         self.goalPose.pose.orientation.w = 0.0
-
+        
+        self.sendGetStateRequest()
         self.posePublisher.publish(self.goalPose)
         self._markerPublisher.publish(self.marker)
 

@@ -12,7 +12,7 @@ import numpy as np
 import cv2 as cv
 from rclpy.node import Node
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, LaserScan
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PoseStamped
 from lifecycle_msgs.srv import GetState
@@ -23,6 +23,8 @@ class ThermalSubscriberNode(Node):
     def __init__(self):
         super().__init__("thermal_subscriber")
         self.subscriber = self.create_subscription(Image, "thermal_image", self.dataReceivedCallback, qos_profile=10)
+        self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
+        self.dontGoFurther = False
         self.frame = [0 for i in range(0, 576)]
         self.get_logger().info("Node started")
         self.iterator = 0
@@ -49,20 +51,17 @@ class ThermalSubscriberNode(Node):
         self.declare_parameter('target_min_temp', 28)
         self.declare_parameter('target_max_temp', 37)
         self.declare_parameter('go_to_hottest_point', False)
-    # def publishImageCallback(self):
-    #     msg = Image()
-    #     msg.header.frame_id = "map"
-    #     msg.header.stamp = self.get_clock().now().to_msg()
-    #     msg.width = 16*3
-    #     msg.height = 12
-    #     msg.encoding = "mono8"
-    #     msg.is_bigendian = False
-    #     msg.step = 16*3
-    #     msg.data = []
-    #     for i in range(16*3*12):
-    #             msg.data.append(self.frame[i])
-        
-    #     self._imagePublisher.publish(msg)
+    
+    def laserReceivedCallback(self, msg):
+        closePoints = 0
+        for i in range(0, 30):
+            if(msg.ranges[i] < 0.25):
+                closePoints += 1
+        if (closePoints > 10):
+            self.dontGoFurther = True
+        else:
+            self.dontGoFurther = False
+
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value
         self.targetTempMax = self.get_parameter('target_max_temp').get_parameter_value().integer_value
@@ -102,7 +101,7 @@ class ThermalSubscriberNode(Node):
         self.goalPose.pose.orientation.z = 0.0
         self.goalPose.pose.orientation.w = 0.0
 
-        if(-5 <= angle <= 5):
+        if(-5 <= angle <= 5 and self.dontGoFurther == False):
             self.goalPose.pose.position.x = 0.5
         
         self.posePublisher.publish(self.goalPose)
@@ -221,6 +220,20 @@ class ThermalSubscriberNode(Node):
     #         self.frame[int(i/16)*32 + i + (16*imageID)] = data[i+1]
     #     if(imageID == 0): 
     #         self.publishImageCallback()
+    # def publishImageCallback(self):
+    #     msg = Image()
+    #     msg.header.frame_id = "map"
+    #     msg.header.stamp = self.get_clock().now().to_msg()
+    #     msg.width = 16*3
+    #     msg.height = 12
+    #     msg.encoding = "mono8"
+    #     msg.is_bigendian = False
+    #     msg.step = 16*3
+    #     msg.data = []
+    #     for i in range(16*3*12):
+    #             msg.data.append(self.frame[i])
+        
+    #     self._imagePublisher.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -60,11 +60,11 @@ class ThermalSubscriberNode(Node):
 
        delta = delta/30
        if (delta < 0.25 or delta == float("inf")):
-           self.velocity = 0
+           self.velocity = 0.0
        else:
            self.velocity = delta
-           if(self.velocity > 2):
-                self.velocity = 2
+           if(self.velocity > 2.0):
+                self.velocity = 2.0
 
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value

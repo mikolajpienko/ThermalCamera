@@ -25,7 +25,7 @@ class ThermalSubscriberNode(Node):
         super().__init__("thermal_subscriber")
         self.subscriber = self.create_subscription(Image, "thermal_image", self.dataReceivedCallback, qos_profile=10)
         self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
-        self.dontGoFurther = False
+        self.goForward = False
         self.velocity = 0
         self.frame = [0 for i in range(0, 576)]
         self.get_logger().info("Node started")
@@ -53,21 +53,24 @@ class ThermalSubscriberNode(Node):
         self.declare_parameter('go_to_hottest_point', False)
     
     def laserReceivedCallback(self, msg):
-       delta = 0
-       for i in range(0, 30):
-           if(msg.ranges[i] != float("inf")):
+        delta = 0
+        for i in range(0, 30):
+            if(msg.ranges[i] != float("inf")):
                delta += msg.ranges[i]
-           else:
+            else:
                 delta += 0
-                
-       delta = delta/30
-       self.get_logger().info(str("DELTA: {}".format(delta)))
-       if (delta < 0.25 or delta == float("inf")):
-           self.velocity = 0.0
-       else:
-           self.velocity = delta
-           if(self.velocity > 2.0):
-                self.velocity = 2.0
+
+        delta = delta/30
+        self.get_logger().info(str("DELTA: {}".format(delta)))
+        if (delta < 0.25 or delta == float("inf")):
+            self.velocity = 0.0
+        else:
+            if(self.goForward == True):
+                self.velocity = delta
+                if(self.velocity > 1.0):
+                    self.velocity = 1.0
+        self.twist.linear.x = self.velocity
+        self.posePublisher.publish(self.twist)
 
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value
@@ -100,9 +103,10 @@ class ThermalSubscriberNode(Node):
         
         if(abs(angle) > 15):
             self.twist.angular.z = 0.008 * angle
+            self.goForward = False
         else:
             self.twist.angular.z = 0.0
-            self.twist.linear.x = self.velocity
+            self.goForward = True
         # self.goalPose.header.frame_id = "base_link"
         # self.goalPose.header.stamp = self.get_clock().now().to_msg()
         # self.goalPose.pose.position.x = 0.0
@@ -116,7 +120,6 @@ class ThermalSubscriberNode(Node):
         # if(-10 <= angle <= 10 and self.dontGoFurther == False):
         #     self.goalPose.pose.position.x = 0.5
         
-        self.posePublisher.publish(self.twist)
         self._markerPublisher.publish(self.marker)
 
     def publishImage(self, image):

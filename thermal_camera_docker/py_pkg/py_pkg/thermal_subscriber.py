@@ -44,21 +44,21 @@ class ThermalSubscriberNode(Node):
         self.imageToPublish = []
         self.stitcher = cv.Stitcher_create()
         self.lastCenterPixel = 0
-        self.targetTempMin = 28
-        self.targetTempMax = 37
+        self.targetTempMin = 26
+        self.targetTempMax = 60
         self.goToHottest = False
         self.timer = self.create_timer(0.5, self.parseParams)
-        self.declare_parameter('target_min_temp', 28)
-        self.declare_parameter('target_max_temp', 37)
+        self.declare_parameter('target_min_temp', 26)
+        self.declare_parameter('target_max_temp', 60)
         self.declare_parameter('go_to_hottest_point', False)
     
     def laserReceivedCallback(self, msg):
         closest = float("inf")
-        for i in range(0, 90):
+        for i in range(0, 180):
             if(msg.ranges[i] != float("inf")):
                 if(closest > msg.ranges[i]):
                     closest = msg.ranges[i]
-        for i in range(1349, 1439):
+        for i in range(1259, 1439):
             if(msg.ranges[i] != float("inf")):
                if(closest > msg.ranges[i]):
                     closest = msg.ranges[i]
@@ -106,7 +106,7 @@ class ThermalSubscriberNode(Node):
         self.marker.pose.orientation.w = 0.0
         
         if(abs(angle) > 15):
-            self.twist.angular.z = 0.008 * -angle
+            self.twist.angular.z = 0.004 * -angle
             self.goForward = False
         else:
             self.twist.angular.z = 0.0
@@ -144,8 +144,7 @@ class ThermalSubscriberNode(Node):
         blur = np.zeros_like(raw_image)
         blur = cv.medianBlur(cv_image, 3)
         #converting from 16bit mono to 8 bit 
-        img8bit = (blur/256).astype("uint8")
-
+        img8bit = (cv_image/256).astype("uint8")
         #creating color image that can display colored contours and markers
         color_img = cvtColor(img8bit, cv.COLOR_GRAY2RGB)
 
@@ -154,7 +153,7 @@ class ThermalSubscriberNode(Node):
         
         if(self.goToHottest == True):
             #creating a mask image that contains the hotest pixels
-            ret, bin_img = cv.threshold(img8bit, 165, 255, cv.THRESH_BINARY)
+            ret, bin_img = cv.threshold(img8bit, 180, 255, cv.THRESH_BINARY)
             bin_img = cv.resize(bin_img, (16*9, 12*3), interpolation=cv.INTER_LINEAR)
             contours, hier = cv.findContours(bin_img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             index = 0

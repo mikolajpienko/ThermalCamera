@@ -66,9 +66,11 @@ class ThermalSubscriberNode(Node):
             self.velocity = 0.0
         else:
             if(self.goForward == True):
-                self.velocity = delta
+                self.velocity = delta/2
                 if(self.velocity > 1.0):
                     self.velocity = 1.0
+            else:
+                self.velocity = 0.0
         self.twist.linear.x = self.velocity
         self.posePublisher.publish(self.twist)
 

@@ -54,21 +54,20 @@ class ThermalSubscriberNode(Node):
     
     def laserReceivedCallback(self, msg):
         delta = 0
-        for i in range(0, 30):
+        for i in range(0, 60):
             if(msg.ranges[i] != float("inf")):
                delta += msg.ranges[i]
             else:
                 delta += 0
-
-        delta = delta/30
-        self.get_logger().info(str("DELTA: {}".format(delta)))
+        delta = delta/60
+        self.get_logger().info(str("DELTA: {}   SIZE: {}".format(delta, len(msg.ranges))))
         if (delta < 0.25 or delta == float("inf")):
             self.velocity = 0.0
         else:
             if(self.goForward == True):
                 self.velocity = delta/5
-                if(self.velocity > 1.0):
-                    self.velocity = 1.0
+                if(self.velocity > 0.3):
+                    self.velocity = 0.3
             else:
                 self.velocity = 0.0
         self.twist.linear.x = self.velocity

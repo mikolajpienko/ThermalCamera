@@ -59,6 +59,7 @@ class ThermalSubscriberNode(Node):
                delta += msg.ranges[i]
 
        delta = delta/30
+       self.get_logger().info(str("DELTA: {}".format(delta)))
        if (delta < 0.25 or delta == float("inf")):
            self.velocity = 0.0
        else:

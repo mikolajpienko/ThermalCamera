@@ -4,6 +4,7 @@ from curses import raw
 from distutils.archive_util import make_archive
 import imp
 from inspect import Parameter
+from site import execsitecustomize
 from cv2 import WARP_INVERSE_MAP, cvtColor, waitKey
 from numpy import array, interp
 import numpy
@@ -14,7 +15,7 @@ from rclpy.node import Node
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, LaserScan
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist
 from lifecycle_msgs.srv import GetState
 from lifecycle_msgs.msg import State
 import math
@@ -23,7 +24,7 @@ class ThermalSubscriberNode(Node):
     def __init__(self):
         super().__init__("thermal_subscriber")
         self.subscriber = self.create_subscription(Image, "thermal_image", self.dataReceivedCallback, qos_profile=10)
-        self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
+#        self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
         self.dontGoFurther = False
         self.frame = [0 for i in range(0, 576)]
         self.get_logger().info("Node started")
@@ -31,11 +32,11 @@ class ThermalSubscriberNode(Node):
         self.buf= []
         self._markerPublisher = self.create_publisher(Marker, "tc_goal_angle", 10)
         self.imagePublisher = self.create_publisher(Image, "tc_image_devel", 10)
-        self.posePublisher = self.create_publisher(PoseStamped, "goal_pose", 10)
+        self.posePublisher = self.create_publisher(Twist, "cmd_vel", 10)
         self.cli = self.create_client(GetState, 'bt_navigator/get_state')
         self.navStateRequest = GetState.Request()
         self.state = State()
-        self.goalPose = PoseStamped()
+        self.twist = Twist()
         self.images = []
         self.targetAngle = 0.0
         self.marker = Marker()
@@ -52,21 +53,21 @@ class ThermalSubscriberNode(Node):
         self.declare_parameter('target_max_temp', 37)
         self.declare_parameter('go_to_hottest_point', False)
     
-    def laserReceivedCallback(self, msg):
-        closePoints = 0
-        for i in range(0, 30):
-            if(msg.ranges[i] < 0.25):
-                closePoints += 1
-        if (closePoints > 10):
-            self.dontGoFurther = True
-        else:
-            self.dontGoFurther = False
+#    def laserReceivedCallback(self, msg):
+#        closePoints = 0
+#        for i in range(0, 30):
+#            if(msg.ranges[i] < 0.25 or msg.ranges[i] == float("inf")):
+#                closePoints += 1
+#        if (closePoints > 10):
+#            self.dontGoFurther = True
+#        else:
+#            self.dontGoFurther = False
 
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value
         self.targetTempMax = self.get_parameter('target_max_temp').get_parameter_value().integer_value
         self.goToHottest = self.get_parameter('go_to_hottest_point').get_parameter_value().bool_value
-        self.get_logger().info("target min temp: {}     target max temp: {}     go to hottest: {}".format(self.targetTempMin, self.targetTempMax, self.goToHottest))
+        self.get_logger().info("target min: {} \ntarget max: {}   \ngo to hottest: {}  \ndont go further:{}".format(self.targetTempMin, self.targetTempMax, self.goToHottest, self.dontGoFurther))
 
     def publishArrow(self, angle):
         self.marker.header.frame_id = "base_link"
@@ -91,20 +92,25 @@ class ThermalSubscriberNode(Node):
         self.marker.pose.orientation.z = 0.0
         self.marker.pose.orientation.w = 0.0
         
-        self.goalPose.header.frame_id = "base_link"
-        self.goalPose.header.stamp = self.get_clock().now().to_msg()
-        self.goalPose.pose.position.x = 0.0
-        self.goalPose.pose.position.y = 0.0
-        self.goalPose.pose.position.z = 0.0
-        self.goalPose.pose.orientation.x = math.sin(3.1415 * (angle-180)/360)
-        self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
-        self.goalPose.pose.orientation.z = 0.0
-        self.goalPose.pose.orientation.w = 0.0
+        if(angle > 5):
+            self.twist.angular.z = 0.1
+        if(angle < -5):
+            self.twist.angular.z = -0.1
 
-        if(-5 <= angle <= 5 and self.dontGoFurther == False):
-            self.goalPose.pose.position.x = 0.5
+        # self.goalPose.header.frame_id = "base_link"
+        # self.goalPose.header.stamp = self.get_clock().now().to_msg()
+        # self.goalPose.pose.position.x = 0.0
+        # self.goalPose.pose.position.y = 0.0
+        # self.goalPose.pose.position.z = 0.0
+        # self.goalPose.pose.orientation.x = math.sin(3.1415 * (angle-180)/360)
+        # self.goalPose.pose.orientation.y = math.cos(3.1415 * (angle-180)/360)
+        # self.goalPose.pose.orientation.z = 0.0
+        # self.goalPose.pose.orientation.w = 0.0
+
+        # if(-10 <= angle <= 10 and self.dontGoFurther == False):
+        #     self.goalPose.pose.position.x = 0.5
         
-        self.posePublisher.publish(self.goalPose)
+        self.posePublisher.publish(self.twist)
         self._markerPublisher.publish(self.marker)
 
     def publishImage(self, image):
@@ -132,7 +138,7 @@ class ThermalSubscriberNode(Node):
 
         #resizing image 3 times to increase clarity
         color_img = cv.resize(color_img, (16*9, 12*3), interpolation=cv.INTER_LINEAR)
-       
+        
         if(self.goToHottest == True):
             #creating a mask image that contains the hotest pixels
             ret, bin_img = cv.threshold(img8bit, 165, 255, cv.THRESH_BINARY)
@@ -151,8 +157,11 @@ class ThermalSubscriberNode(Node):
                     index = i
 
             #bounding rect helps finding center of the contour
-            x,y,w,h = cv.boundingRect(contours[index])
-            centerPixel = int(x+(w)/2)
+            try:
+                x,y,w,h = cv.boundingRect(contours[index])
+                centerPixel = int(x+(w)/2)
+            except:
+                centerPixel = 0
         else:
             index = 0
             ret, bin_img = cv.threshold(raw_image, self.targetTempMin*100, self.targetTempMin*100, cv.THRESH_BINARY)

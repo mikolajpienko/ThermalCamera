@@ -55,9 +55,11 @@ class ThermalSubscriberNode(Node):
     def laserReceivedCallback(self, msg):
        delta = 0
        for i in range(0, 30):
-           if(msg.ranges[i] < 0.25 or msg.ranges[i] == float("inf")):
+           if(msg.ranges[i] != float("inf")):
                delta += msg.ranges[i]
-
+           else:
+                delta += 0
+                
        delta = delta/30
        self.get_logger().info(str("DELTA: {}".format(delta)))
        if (delta < 0.25 or delta == float("inf")):

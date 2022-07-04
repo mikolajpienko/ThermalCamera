@@ -93,9 +93,9 @@ class ThermalSubscriberNode(Node):
         self.marker.pose.orientation.w = 0.0
         
         if(angle > 10):
-            self.twist.angular.z = 0.05 * angle
+            self.twist.angular.z = 0.005 * angle
         if(angle < -10):
-            self.twist.angular.z = 0.05 * angle
+            self.twist.angular.z = 0.005 * angle
 
         # self.goalPose.header.frame_id = "base_link"
         # self.goalPose.header.stamp = self.get_clock().now().to_msg()

@@ -104,7 +104,7 @@ class ThermalSubscriberNode(Node):
         self.marker.pose.orientation.w = 0.0
         
         if(abs(angle) > 15):
-            self.twist.angular.z = 0.008 * angle
+            self.twist.angular.z = 0.008 * -angle
             self.goForward = False
         else:
             self.twist.angular.z = 0.0

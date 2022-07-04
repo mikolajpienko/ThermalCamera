@@ -53,24 +53,22 @@ class ThermalSubscriberNode(Node):
         self.declare_parameter('go_to_hottest_point', False)
     
     def laserReceivedCallback(self, msg):
-        delta = 0
+        closest = float("inf")
         for i in range(0, 90):
             if(msg.ranges[i] != float("inf")):
-               delta += msg.ranges[i]
-            else:
-                delta += 0
+                if(closest > msg.ranges[i]):
+                    closest = msg.ranges[i]
         for i in range(1349, 1439):
             if(msg.ranges[i] != float("inf")):
-               delta += msg.ranges[i]
-            else:
-                delta += 0
-        delta = delta/180
-        self.get_logger().info(str("DELTA: {}".format(delta)))
-        if (delta < 0.25 or delta == float("inf")):
+               if(closest > msg.ranges[i]):
+                    closest = msg.ranges[i]
+
+        self.get_logger().info(str("CLOSEST: {}".format(closest)))
+        if (closest < 0.25 or closest == float("inf")):
             self.velocity = 0.0
         else:
             if(self.goForward == True):
-                self.velocity = delta/5
+                self.velocity = closest/5
                 if(self.velocity > 0.3):
                     self.velocity = 0.3
             else:

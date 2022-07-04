@@ -57,11 +57,14 @@ class ThermalSubscriberNode(Node):
        for i in range(0, 30):
            if(msg.ranges[i] < 0.25 or msg.ranges[i] == float("inf")):
                delta += msg.ranges[i]
+
        delta = delta/30
-       if (delta < 0.25):
+       if (delta < 0.25 or delta == float("inf")):
            self.velocity = 0
        else:
            self.velocity = delta
+           if(self.velocity > 2):
+                self.velocity = 2
 
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value

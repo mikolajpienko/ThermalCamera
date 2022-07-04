@@ -66,7 +66,7 @@ class ThermalSubscriberNode(Node):
             self.velocity = 0.0
         else:
             if(self.goForward == True):
-                self.velocity = delta/2
+                self.velocity = delta/5
                 if(self.velocity > 1.0):
                     self.velocity = 1.0
             else:

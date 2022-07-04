@@ -24,8 +24,9 @@ class ThermalSubscriberNode(Node):
     def __init__(self):
         super().__init__("thermal_subscriber")
         self.subscriber = self.create_subscription(Image, "thermal_image", self.dataReceivedCallback, qos_profile=10)
-#        self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
+        self.laserSubscriber = self.create_subscription(LaserScan, "scan", self.laserReceivedCallback, qos_profile=10)
         self.dontGoFurther = False
+        self.velocity = 0
         self.frame = [0 for i in range(0, 576)]
         self.get_logger().info("Node started")
         self.iterator = 0
@@ -37,7 +38,6 @@ class ThermalSubscriberNode(Node):
         self.navStateRequest = GetState.Request()
         self.state = State()
         self.twist = Twist()
-        self.images = []
         self.targetAngle = 0.0
         self.marker = Marker()
         self.lastAngle = 0
@@ -47,27 +47,27 @@ class ThermalSubscriberNode(Node):
         self.targetTempMin = 28
         self.targetTempMax = 37
         self.goToHottest = False
-        self.certain = 0
         self.timer = self.create_timer(0.5, self.parseParams)
         self.declare_parameter('target_min_temp', 28)
         self.declare_parameter('target_max_temp', 37)
         self.declare_parameter('go_to_hottest_point', False)
     
-#    def laserReceivedCallback(self, msg):
-#        closePoints = 0
-#        for i in range(0, 30):
-#            if(msg.ranges[i] < 0.25 or msg.ranges[i] == float("inf")):
-#                closePoints += 1
-#        if (closePoints > 10):
-#            self.dontGoFurther = True
-#        else:
-#            self.dontGoFurther = False
+    def laserReceivedCallback(self, msg):
+       delta = 0
+       for i in range(0, 30):
+           if(msg.ranges[i] < 0.25 or msg.ranges[i] == float("inf")):
+               delta += msg.ranges[i]
+       delta = delta/30
+       if (delta < 0.25):
+           self.velocity = 0
+       else:
+           self.velocity = delta
 
     def parseParams(self):
         self.targetTempMin = self.get_parameter('target_min_temp').get_parameter_value().integer_value
         self.targetTempMax = self.get_parameter('target_max_temp').get_parameter_value().integer_value
         self.goToHottest = self.get_parameter('go_to_hottest_point').get_parameter_value().bool_value
-        self.get_logger().info("target min: {} \ntarget max: {}   \ngo to hottest: {}  \ndont go further:{}".format(self.targetTempMin, self.targetTempMax, self.goToHottest, self.dontGoFurther))
+        self.get_logger().info("target min: {} \ntarget max: {}   \ngo to hottest: {}  \nvelocity:{}".format(self.targetTempMin, self.targetTempMax, self.goToHottest, self.velocity))
 
     def publishArrow(self, angle):
         self.marker.header.frame_id = "base_link"

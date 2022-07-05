@@ -48,8 +48,8 @@ class ThermalSubscriberNode(Node):
         self.targetTempMax = 60
         self.goToHottest = False
         self.timer = self.create_timer(0.5, self.parseParams)
-        self.declare_parameter('target_min_temp', 26)
-        self.declare_parameter('target_max_temp', 60)
+        self.declare_parameter('target_min_temp', 34)
+        self.declare_parameter('target_max_temp', 38)
         self.declare_parameter('go_to_hottest_point', False)
     
     def laserReceivedCallback(self, msg):
@@ -58,13 +58,14 @@ class ThermalSubscriberNode(Node):
             if(msg.ranges[i] != float("inf")):
                 if(closest > msg.ranges[i]):
                     closest = msg.ranges[i]
+
         for i in range(1259, 1439):
             if(msg.ranges[i] != float("inf")):
                if(closest > msg.ranges[i]):
                     closest = msg.ranges[i]
 
         self.get_logger().info(str("CLOSEST: {}".format(closest)))
-        if (closest < 0.25 or closest == float("inf")):
+        if (closest < 0.20 or closest == float("inf")):
             self.velocity = 0.0
         else:
             if(self.goForward == True):
@@ -144,7 +145,7 @@ class ThermalSubscriberNode(Node):
         blur = np.zeros_like(raw_image)
         blur = cv.medianBlur(cv_image, 3)
         #converting from 16bit mono to 8 bit 
-        img8bit = (cv_image/256).astype("uint8")
+        img8bit = (blur/256).astype("uint8")
         #creating color image that can display colored contours and markers
         color_img = cvtColor(img8bit, cv.COLOR_GRAY2RGB)
 
@@ -153,7 +154,7 @@ class ThermalSubscriberNode(Node):
         
         if(self.goToHottest == True):
             #creating a mask image that contains the hotest pixels
-            ret, bin_img = cv.threshold(img8bit, 180, 255, cv.THRESH_BINARY)
+            ret, bin_img = cv.threshold(img8bit, 190, 255, cv.THRESH_BINARY)
             bin_img = cv.resize(bin_img, (16*9, 12*3), interpolation=cv.INTER_LINEAR)
             contours, hier = cv.findContours(bin_img, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
             index = 0
@@ -229,11 +230,15 @@ class ThermalSubscriberNode(Node):
         #waitKey(1)
         self.publishImage(color_img)
         self.publishArrow(self.targetAngle)
-        # temps = []
-        # for i in range(0,msg.width * msg.height * 2, 2):
-        #     temps.append(float(msg.data[i] | msg.data[i+1]<<8)/100)
+        hottest = 0.0
+        temps = []
+        for i in range(0,msg.width * msg.height * 2, 2):
+            temps.append(float(msg.data[i] | msg.data[i+1]<<8)/100)
+        for i in range(0, len(temps)):
+            if temps[i] > hottest:
+                hottest = temps[i]
             
-        # self.get_logger().info(str(temps) + "\n" + str(len(temps)))
+        self.get_logger().info(str(temps) + "\n" + str("Hottest:  {}".format(hottest)))
 
     # def processData(self, data:Image):
     #     imageID = data[0]

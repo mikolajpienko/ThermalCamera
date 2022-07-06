@@ -27,9 +27,9 @@ A simple node was written in Python to process the input thermal image and steer
 
 ### ROS Description
 
-| Topic | Node Name | Description |
-|---------------------------|
-| `/thermal_image` | `/thermal_camera` | Raw thermal image represented with grayscale image (temperature = pixel intensity/100). |
-| `/tc_image_devel` | `/thermal_subscriber`| Normalized image with target object contours. |
-| `/tc_goal_angle` | `/thermal_subscriber`| Arrow pointing at the target angle relative to the robot. |
+ Topic | Node Name | Description 
+ --- | --- | ---
+ `/thermal_image` | `/thermal_camera` | Raw thermal image represented with grayscale image (temperature = pixel intensity/100). 
+ `/tc_image_devel` | `/thermal_subscriber`| Normalized image with target object contours. 
+ `/tc_goal_angle` | `/thermal_subscriber`| Arrow pointing at the target angle relative to the robot. 
 
